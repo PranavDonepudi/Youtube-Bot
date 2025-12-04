@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Q&A Bot</title>
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --card-bg: #1e1e1e;
+            --chat-bot-bg: #272727;
+            --chat-user-bg: #cc0000; /* YouTube Red */
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --accent-red: #ff0000;
+            --accent-hover: #d90000;
+            --border-color: #3f3f3f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header Styling */
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        header h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header h1 span {
+            color: var(--accent-red);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            background: var(--card-bg);
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            font-size: 0.9rem;
+        }
+
+        .status-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #fbbf24;
+            box-shadow: 0 0 8px #fbbf24;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .status-dot.error {
+            background: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+
+        /* Chat Container */
+        .chat-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 60vh;
+            min-height: 500px;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at center, #2a2a2a 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Message Bubbles */
+        .message {
+            margin-bottom: 20px;
+            animation: slideUp 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bot-message {
+            align-items: flex-start;
+        }
+
+        .user-message {
+            align-items: flex-end;
+        }
+
+        .message-content {
+            padding: 14px 20px;
+            border-radius: 18px;
+            max-width: 80%;
+            font-size: 1rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .bot-message .message-content {
+            background: var(--chat-bot-bg);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .user-message .message-content {
+            background: var(--chat-user-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px rgba(204, 0, 0, 0.3);
+        }
+
+        .message-hint {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* Input Area */
+        .input-container {
+            padding: 20px;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        #questionInput {
+            flex: 1;
+            padding: 15px;
+            background: #121212;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: none;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        #questionInput:focus {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.1);
+        }
+
+        #sendButton {
+            padding: 0 30px;
+            height: 54px;
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #sendButton:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+        }
+
+        #sendButton:active {
+            transform: translateY(0);
+        }
+
+        #sendButton:disabled {
+            background: #444;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            margin-top: 25px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .stats-panel h3 {
+            color: var(--accent-red);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #statsContent {
+            color: var(--text-secondary);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: #121212;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: white;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-red);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            header h1 { font-size: 2em; }
+            .chat-container { height: 70vh; }
+            .input-container { padding: 15px; }
+            #sendButton { padding: 0 20px; font-size: 0.9rem; }
+            .message-content { max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🎥 YouTube <span>Q&A Bot</span></h1>
+            <p class="subtitle">Analyze videos, fetch transcripts, and chat with content.</p>
+        </header>
+
+        <div class="status-wrapper">
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Connecting to Knowledge Base...</span>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="messages" id="messagesContainer">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        <p>👋 <strong>Hello!</strong> I'm your YouTube Assistant.</p>
+                        <p>I have analyzed the channel data. Ask me anything about the videos, specific topics, or summaries!</p>
+                        <p class="message-hint">Try: "Summarize the latest video" or "What does he say about Python?"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <textarea 
+                    id="questionInput" 
+                    placeholder="Type your question here..."
+                    rows="1"
+                ></textarea>
+                <button id="sendButton">
+                    <span id="buttonText">SEND</span>
+                    <span id="buttonLoader" class="loader" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="stats-panel" id="statsPanel">
+            <h3>📊 Channel Stats</h3>
+            <div id="statsContent">
+                <div class="stat-card">
+                    <span class="stat-value">--</span>
+                    <span class="stat-label">Videos Indexed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">--</span>
+                    <span class="stat-label">Total Views</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">--</span>
+                    <span class="stat-label">Last Updated</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Simulated Frontend Logic for Demonstration ---
+
+        const input = document.getElementById('questionInput');
+        const sendBtn = document.getElementById('sendButton');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+
+        // Auto-resize textarea
+        input.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            if(this.value === '') this.style.height = 'auto';
+        });
+
+        // Simulate Connection after 2 seconds
+        setTimeout(() => {
+            statusDot.classList.add('connected');
+            statusText.textContent = "System Online & Ready";
+            
+            // Update dummy stats
+            document.getElementById('statsContent').innerHTML = `
+                <div class="stat-card">
+                    <span class="stat-value">42</span>
+                    <span class="stat-label">Videos Indexed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">1.2M</span>
+                    <span class="stat-label">Total Context Words</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">Live</span>
+                    <span class="stat-label">Status</span>
+                </div>
+            `;
+        }, 1500);
+
+        // Send Message Logic
+        sendBtn.addEventListener('click', sendMessage);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 1. Add User Message
+            addMessage(text, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+
+            // 2. Loading State
+            setLoading(true);
+
+            // 3. Simulate Bot Response (Replace this with actual API call)
+            setTimeout(() => {
+                const dummyResponse = "I am a frontend demo currently. To make me functional, connect me to the Python backend we discussed earlier!";
+                addMessage(dummyResponse, 'bot');
+                setLoading(false);
+            }, 2000);
+        }
+
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}-message`;
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.innerHTML = `<p>${text}</p>`;
+            
+            div.appendChild(content);
+            messagesContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        function setLoading(isLoading) {
+            const btnText = document.getElementById('buttonText');
+            const loader = document.getElementById('buttonLoader');
+            
+            if (isLoading) {
+                sendBtn.disabled = true;
+                btnText.style.display = 'none';
+                loader.style.display = 'inline-block';
+            } else {
+                sendBtn.disabled = false;
+                btnText.style.display = 'inline';
+                loader.style.display = 'none';
+                input.focus();
+            }
+        }
+
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
