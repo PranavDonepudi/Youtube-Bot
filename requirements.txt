@@ -1,0 +1,24 @@
+# YouTube Data Fetching
+google-api-python-client==2.108.0
+youtube-transcript-api==0.6.2
+
+# Environment & Utilities
+python-dotenv==1.0.0
+certifi>=2023.7.22
+urllib3>=2.0.0
+requests>=2.31.0
+
+# Vector Database & Embeddings
+faiss-cpu==1.9.0
+sentence-transformers==2.2.2
+numpy==1.24.3
+
+# LLM APIs
+openai==1.6.1
+anthropic==0.8.1
+
+# API Backend
+fastapi==0.108.0
+uvicorn==0.25.0
+python-multipart==0.0.6
+pydantic==2.5.3
